@@ -1,57 +1,41 @@
 CC = gcc
-CPPFLAGS = -I./include
-CFLAGS = -ansi -pedantic -Wall -fPIC -O2
+CFLAGS = -ansi -pedantic -Wall -fPIC -O3
+CFLAGS += -DNDEBUG
 
 AR = ar
 ARFLAGS = -r
 
-all : shared static
+SOURCEDIR := src
+BUILDDIR := obj
+INCLUDEDIR := include
+DOCDIR := doc
 
-shared : libtourtre.so
+SOURCES := $(shell find $(SOURCEDIR) -name '*.c')
+OBJECTS := $(addprefix $(BUILDDIR)/,$(notdir $(SOURCES:%.c=%.o)))
 
-static : libtourtre.a
+SHARED := libtourtre.so
+STATIC := libtourtre.a
 
-objs =  src/tourtre.o     \
-	src/ctArc.o       \
-	src/ctBranch.o    \
-	src/ctComponent.o \
-	src/ctNode.o      \
-	src/ctQueue.o     \
-	src/ctNodeMap.o
+.PHONY: all clean doc
 
-libtourtre.a : $(objs)
+all : $(SHARED) $(STATIC)
+
+$(SHARED) : $(OBJECTS)
 	$(AR) $(ARFLAGS) $@ $^
 	
-libtourtre.so : $(objs)
+$(STATIC) : $(OBJECTS)
 	$(CC) -shared -o $@ $^
 
-src/tourtre.o : src/tourtre.c include/tourtre.h src/ctMisc.h include/ctArc.h include/ctNode.h src/ctComponent.h include/ctNode.h src/ctQueue.h src/ctAlloc.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+$(BUILDDIR)/%.o: $(SOURCEDIR)/%.c
+	mkdir -p $(dir $@)	
+	$(CC) $(CFLAGS) $(LDFLAGS) -I$(INCLUDEDIR) -I$(dir $<) -c $< -o $@
 
-src/ctArc.o : src/ctArc.c include/tourtre.h src/ctMisc.h include/ctArc.h 
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+doxyfile.inc: Makefile
+	@echo INPUT                  = $(INCLUDEDIR) > doxyfile.inc
+	@echo OUTPUT_DIRECTORY         =  $(DOCDIR) >> doxyfile.inc
 
-src/ctBranch.o : src/ctBranch.c include/tourtre.h src/ctMisc.h include/ctBranch.h 
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
-
-src/ctComponent.o : src/ctComponent.c include/tourtre.h src/ctMisc.h src/ctComponent.h 
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
-
-src/ctNode.o : src/ctNode.c include/tourtre.h src/ctMisc.h include/ctNode.h 
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
-
-src/ctQueue.o : src/ctQueue.c include/tourtre.h src/ctMisc.h src/ctQueue.h 
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
-
-src/ctNodeMap.o : src/ctNodeMap.c src/ctNodeMap.h include/ctNode.h src/ctQueue.h src/sglib.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+doc: doxyfile.inc $(SOURCES)
+	doxygen Doxyfile
 
 clean :
-	-rm -rf src/*.o libtourtre.a libtourtre.so doc/html
-
-	
-# src/test : 	libtourtre.a test/test.c
-# 	$(CC) $(CPPFLAGS) $(CFLAGS) -o test/test test/test.c -L. -ltourtre
-# 
-# test: src/test
-# 	test/test
+	-rm -rf $(SHARED) $(STATIC) $(OBJECTS) $(DOCDIR)/html doxygen.inc
