@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -ansi -pedantic -Wall -fPIC -O3
-CFLAGS += -DNDEBUG
+CFLAGS += -DDEBUG -g
 
 AR = ar
 ARFLAGS = -r
