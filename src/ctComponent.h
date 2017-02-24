@@ -43,7 +43,7 @@ typedef struct ctComponent
 	struct ctComponent *nextPred, *prevPred;
 	struct ctComponent *uf; /* union find */
         ctComponentType type;
-	//void * data; /* user data */
+	void * data; /* user data */
 } ctComponent;
 
 ctComponent*  ctComponent_new          ( ctComponentType type );

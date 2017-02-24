@@ -9,7 +9,6 @@ extern "C"
 
 #include "Data.h"
 #include "Mesh.h"
-#include "ctContext.h"
 
 #ifdef _MSC_VER
 #include <io.h>
@@ -34,10 +33,15 @@ double value(size_t v, void * d) {
 
 size_t neighbors(size_t v, size_t * nbrs, void * d) {
 	Mesh * mesh = static_cast<Mesh*>(d);
-	size_t count = 0;
-	mesh->getNeighbors(v, nbrs, count);
-
-	return count;
+	static std::vector<size_t> nbrsBuf;
+ 	
+ 	nbrsBuf.clear();
+ 	mesh->getNeighbors(v,nbrsBuf);
+ 	
+ 	for (uint i = 0; i < nbrsBuf.size(); i++) {
+ 		nbrs[i] = nbrsBuf[i]; 
+ 	}
+ 	return nbrsBuf.size();
 }
 
 
@@ -52,15 +56,6 @@ void outputTree(std::ofstream & out, ctBranch * b) {
 	out << ")";
 }
 
-int countTree(ctBranch * b) {
-	int count = 1;
-
-	for (ctBranch * c = b->children.head; c != NULL; c = c->nextChild) {
-		count += countTree(c);
-	}
-
-	return count;
-}
 
 
 
@@ -92,10 +87,6 @@ int main(int argc, char ** argv) {
 			strcpy(outfile, optarg);
 			break;
 		}
-		case 'c': {
-			countOnly = 1;
-			break;
-		}
 		case '?':
 			errflg++;
 		}
@@ -107,7 +98,6 @@ int main(int argc, char ** argv) {
 		clog << "flags" << endl;
 		clog << "\t -i < filename >  :  filename" << endl;
 		clog << "\t -o < filename >  :  filename" << endl;
-		clog << "\t -c    (to emit only a count of the tree size)" << endl;
 		clog << endl;
 
 		clog << "Filename must be of the form <name>.<i>x<j>x<k>.<type>" << endl;
@@ -143,7 +133,6 @@ int main(int argc, char ** argv) {
 		&neighbors,
 		&mesh //data for callbacks. The global functions less, value and neighbors are just wrappers which call mesh->getNeighbors, etc
 	);
-	ctx->maxValence = 18;
 
 	//create contour tree
 	ct_sweepAndMerge(ctx);
@@ -153,19 +142,12 @@ int main(int argc, char ** argv) {
 	ctBranch ** map = ct_branchMap(ctx);
 	ct_cleanup(ctx);
 
-	if (countOnly) {
-		cout << "Number of nodes in the tree: " << countTree(root) << endl;
-	}
-	else {
-		//output tree
-		std::ofstream out(outfile, std::ios::out);
-		if (out) {
-			outputTree(out, root);
-		}
-		else {
-			cerr << "couldn't open output file " << outfile << endl;
-		}
-	}
+	std::ofstream out(outfile,std::ios::out);
+	if (out) {
+ 		outputTree( out, root);
+ 	} else {
+ 		cerr << "couldn't open output file " << outfile << endl;
+ 	}
 
 }
 
