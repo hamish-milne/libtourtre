@@ -71,11 +71,6 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = include/ctArc.h \
-                         include/ctNode.h \
-                         include/ctBranch.h \
-                         include/tourtre.h
-FILE_PATTERNS          = 
 RECURSIVE              = NO
 EXCLUDE                = 
 EXCLUDE_SYMLINKS       = NO
@@ -223,3 +218,5 @@ DOT_CLEANUP            = YES
 # Configuration::additions related to the search engine   
 #---------------------------------------------------------------------------
 SEARCHENGINE           = NO
+
+@INCLUDE = doxyfile.inc

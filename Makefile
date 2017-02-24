@@ -15,7 +15,7 @@ OBJECTS := $(addprefix $(BUILDDIR)/,$(SOURCES:%.c=%.o))
 SHARED := libtourtre.so
 STATIC := libtourtre.a
 
-.PHONY: all clean
+.PHONY: all clean doc
 
 all : $(SHARED) $(STATIC)
 
@@ -29,5 +29,12 @@ $(BUILDDIR)/%.o: %.c
 	mkdir -p $(dir $@)	
 	$(CC) $(CFLAGS) $(LDFLAGS) -I$(INCLUDEDIR) -I$(dir $<) -c $< -o $@
 
+doxyfile.inc: Makefile
+	@echo INPUT         =  $(INCLUDEDIR) > doxyfile.inc
+	@echo FILE_PATTERNS =  *.h >> doxyfile.inc
+
+doc: doxyfile.inc $(SOURCES)
+	doxygen Doxyfile
+
 clean :
-	-rm -rf $(SHARED) $(STATIC) $(OBJECTS)
+	-rm -rf $(SHARED) $(STATIC) $(OBJECTS) 
