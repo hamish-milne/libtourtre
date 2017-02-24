@@ -39,4 +39,4 @@ doc: doxyfile.inc $(SOURCES)
 	doxygen Doxyfile
 
 clean :
-	-rm -rf $(SHARED) $(STATIC) $(OBJECTS) $(DOCDIR)/html doxygen.inc
+	-rm -rf $(SHARED) $(STATIC) $(OBJECTS) $(DOCDIR)/html doxyfile.inc
