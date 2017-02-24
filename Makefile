@@ -8,6 +8,7 @@ ARFLAGS = -r
 SOURCEDIR := src
 BUILDDIR := obj
 INCLUDEDIR := include
+DOCDIR := doc
 
 SOURCES := $(shell find $(SOURCEDIR) -name '*.c')
 OBJECTS := $(addprefix $(BUILDDIR)/,$(SOURCES:%.c=%.o))
@@ -30,11 +31,11 @@ $(BUILDDIR)/%.o: %.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -I$(INCLUDEDIR) -I$(dir $<) -c $< -o $@
 
 doxyfile.inc: Makefile
-	@echo INPUT         =  $(INCLUDEDIR) > doxyfile.inc
-	@echo FILE_PATTERNS =  *.h >> doxyfile.inc
+	@echo INPUT                  = $(INCLUDEDIR) > doxyfile.inc
+	@echo OUTPUT_DIRECTORY         =  $(DOCDIR) >> doxyfile.inc
 
 doc: doxyfile.inc $(SOURCES)
 	doxygen Doxyfile
 
 clean :
-	-rm -rf $(SHARED) $(STATIC) $(OBJECTS) 
+	-rm -rf $(SHARED) $(STATIC) $(OBJECTS) $(DOCDIR)/html doxygen.inc
