@@ -311,3 +311,8 @@ dkms.conf
 doxyfile.inc
 doc/html/*
 !doc/img/*
+
+# Example programs
+examples/simple/simple
+examples/simple/tifftree
+examples/trilinear/tltree
