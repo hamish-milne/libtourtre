@@ -11,7 +11,7 @@ INCLUDEDIR := include
 DOCDIR := doc
 
 SOURCES := $(shell find $(SOURCEDIR) -name '*.c')
-OBJECTS := $(addprefix $(BUILDDIR)/,$(SOURCES:%.c=%.o))
+OBJECTS := $(addprefix $(BUILDDIR)/,$(notdir $(SOURCES:%.c=%.o)))s
 
 SHARED := libtourtre.so
 STATIC := libtourtre.a
@@ -26,7 +26,7 @@ $(SHARED) : $(OBJECTS)
 $(STATIC) : $(OBJECTS)
 	$(CC) -shared -o $@ $^
 
-$(BUILDDIR)/%.o: %.c
+$(BUILDDIR)/%.o: $(SOURCEDIR)/%.c
 	mkdir -p $(dir $@)	
 	$(CC) $(CFLAGS) $(LDFLAGS) -I$(INCLUDEDIR) -I$(dir $<) -c $< -o $@
 
