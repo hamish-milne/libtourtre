@@ -132,7 +132,9 @@ void ctPriorityQ_pushHeap ( ctPriorityQ * self, ctPriorityQ_Item item )
 
         self->storage *= 2;
         newHeap = (ctPriorityQ_Item*) calloc( self->storage, sizeof(ctPriorityQ_Item) );
-        for ( i = 0; i < self->size; i++ ) newHeap[i] = self->heap[i];
+#undef min
+#pragma loop count min(64)
+		for ( i = 0; i < self->size; i++ ) newHeap[i] = self->heap[i];
         free(self->heap);
         self->heap = newHeap;
     }

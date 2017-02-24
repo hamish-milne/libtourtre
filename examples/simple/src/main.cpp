@@ -9,8 +9,14 @@ extern "C"
 
 #include "Data.h"
 #include "Mesh.h"
+#include "ctContext.h"
 
+#ifdef _MSC_VER
+#include <io.h>
+#include <getopt.h>
+#else
 #include <unistd.h>
+#endif
 
 using std::cin;
 using std::cout;
@@ -20,79 +26,88 @@ using std::endl;
 
 
 
-double value ( size_t v, void * d ) {
+double value(size_t v, void * d) {
 	Mesh * mesh = reinterpret_cast<Mesh*>(d);
 	return mesh->data[v];
 }
 
 
-size_t neighbors ( size_t v, size_t * nbrs, void * d ) {
+size_t neighbors(size_t v, size_t * nbrs, void * d) {
 	Mesh * mesh = static_cast<Mesh*>(d);
-	static std::vector<size_t> nbrsBuf;
-	
-	nbrsBuf.clear();
-	mesh->getNeighbors(v,nbrsBuf);
-	
-	for (uint i = 0; i < nbrsBuf.size(); i++) {
-		nbrs[i] = nbrsBuf[i]; 
-	}
-	return nbrsBuf.size();
+	size_t count = 0;
+	mesh->getNeighbors(v, nbrs, count);
+
+	return count;
 }
 
 
-void outputTree( std::ofstream & out, ctBranch * b ) {
-	out << "(" << b->extremum << ' ' << b->saddle ;
-	
-	for ( ctBranch * c = b->children.head; c != NULL; c = c->nextChild ){
+void outputTree(std::ofstream & out, ctBranch * b) {
+	out << "(" << b->extremum << ' ' << b->saddle;
+
+	for (ctBranch * c = b->children.head; c != NULL; c = c->nextChild) {
 		out << " ";
-		outputTree( out, c );
+		outputTree(out, c);
 	}
-	
+
 	out << ")";
-} 
+}
+
+int countTree(ctBranch * b) {
+	int count = 1;
+
+	for (ctBranch * c = b->children.head; c != NULL; c = c->nextChild) {
+		count += countTree(c);
+	}
+
+	return count;
+}
 
 
 
 
-
-int main( int argc, char ** argv ) {
+int main(int argc, char ** argv) {
 
 
 	int errflg = 0;
+	int countOnly = 0;
 	int c;
-	
+
 	//command line parameters
 	char filename[1024] = "";
 	char outfile[1024] = "";
-	
-	#if USE_ZLIB
-	char switches[256] = "i:o:";
-	#else
-	char switches[256] = "i:o:";
-	#endif
 
-	while ( ( c = getopt( argc, argv, switches ) ) != EOF ) {
-		switch ( c ) {
-				case 'i': {
-					strcpy(filename,optarg);
-					break;
-				}
-				case 'o': {
-					strcpy(outfile,optarg);
-					break;
-				}
-				
-				case '?':
-					errflg++;
+#if USE_ZLIB
+	char switches[256] = "i:o:c";
+#else
+	char switches[256] = "i:o:c";
+#endif
+
+	while ((c = getopt(argc, argv, switches)) != EOF) {
+		switch (c) {
+		case 'i': {
+			strcpy(filename, optarg);
+			break;
+		}
+		case 'o': {
+			strcpy(outfile, optarg);
+			break;
+		}
+		case 'c': {
+			countOnly = 1;
+			break;
+		}
+		case '?':
+			errflg++;
 		}
 	}
-		
-	if ( errflg || filename[0] == '\0') {
+
+	if (errflg || filename[0] == '\0') {
 		clog << "usage: " << argv[0] << " <flags> " << endl << endl;
-		
+
 		clog << "flags" << endl;
 		clog << "\t -i < filename >  :  filename" << endl;
 		clog << "\t -o < filename >  :  filename" << endl;
+		clog << "\t -c    (to emit only a count of the tree size)" << endl;
 		clog << endl;
 
 		clog << "Filename must be of the form <name>.<i>x<j>x<k>.<type>" << endl;
@@ -110,7 +125,7 @@ int main( int argc, char ** argv ) {
 	//Load data
 	Data data;
 	bool compress;
-	if (!data.load( filename, prefix, &compress )) {
+	if (!data.load(filename, prefix, &compress)) {
 		cerr << "Failed to load data" << std::endl;
 		exit(1);
 	}
@@ -118,9 +133,9 @@ int main( int argc, char ** argv ) {
 	//Create mesh
 	Mesh mesh(data);
 	std::vector<size_t> totalOrder;
-	mesh.createGraph( totalOrder ); //this just sorts the vertices according to data.less()
-	
-	//init libtourtre
+	mesh.createGraph(totalOrder); //this just sorts the vertices according to data.less()
+
+								  //init libtourtre
 	ctContext * ctx = ct_init(
 		data.totalSize, //numVertices
 		&(totalOrder.front()), //totalOrder. Take the address of the front of an stl vector, which is the same as a C array
@@ -128,23 +143,30 @@ int main( int argc, char ** argv ) {
 		&neighbors,
 		&mesh //data for callbacks. The global functions less, value and neighbors are just wrappers which call mesh->getNeighbors, etc
 	);
-	
+	ctx->maxValence = 18;
+
 	//create contour tree
-	ct_sweepAndMerge( ctx );
-	ctBranch * root = ct_decompose( ctx );
-	
+	ct_sweepAndMerge(ctx);
+	ctBranch * root = ct_decompose(ctx);
+
 	//create branch decomposition
 	ctBranch ** map = ct_branchMap(ctx);
-	ct_cleanup( ctx );
-	
-	//output tree
-	std::ofstream out(outfile,std::ios::out);
-	if (out) {
-		outputTree( out, root);
-	} else {
-		cerr << "couldn't open output file " << outfile << endl;
+	ct_cleanup(ctx);
+
+	if (countOnly) {
+		cout << "Number of nodes in the tree: " << countTree(root) << endl;
 	}
-	
+	else {
+		//output tree
+		std::ofstream out(outfile, std::ios::out);
+		if (out) {
+			outputTree(out, root);
+		}
+		else {
+			cerr << "couldn't open output file " << outfile << endl;
+		}
+	}
+
 }
 
 

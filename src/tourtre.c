@@ -176,8 +176,6 @@ ct_checkContext(ctx);
 }
 }
 
-
-
 static
 ctComponent* 
 ct_sweep

@@ -85,9 +85,9 @@ bool Data::load(const char * file, char * prefix, bool * compressed) {
 
 
 	std::ifstream infile;
-	gzFile zinfile;
 
 	#if USE_ZLIB
+		gzFile zinfile;
 		zinfile = gzopen(file,"rb");
 		if (!zinfile) {
 			std::cerr << "could not open" << filename << std::endl;
@@ -129,7 +129,10 @@ bool Data::load(const char * file, char * prefix, bool * compressed) {
 		infile.read( reinterpret_cast<char*>(intData) , totalSize * 2 );
 		#endif
 
-		for (uint i = 0; i < totalSize; i++) {
+		uint size = this->totalSize;
+#pragma parallel
+#pragma loop count min(1024)
+		for (uint i = 0; i < size; i++) {
 			data[i] = static_cast<DataType>( intData[i] );
 		}
 
@@ -145,7 +148,10 @@ bool Data::load(const char * file, char * prefix, bool * compressed) {
 		infile.read( reinterpret_cast<char*>(floatData) , totalSize * 4 );
 		#endif
 
-		for (uint i = 0; i < totalSize; i++) {
+		uint size = this->totalSize;
+#pragma parallel
+#pragma loop count min(1024)
+		for (uint i = 0; i < size; i++) {
 			data[i] = static_cast<DataType>( floatData[i] );
 		}
 
@@ -161,7 +167,10 @@ bool Data::load(const char * file, char * prefix, bool * compressed) {
 		infile.read( reinterpret_cast<char*>(doubleData) , totalSize * 8 );
 		#endif
 
-		for (uint i = 0; i < totalSize; i++) {
+		uint size = this->totalSize;
+#pragma parallel
+#pragma loop count min(1024)
+		for (uint i = 0; i < size; i++) {
 			data[i] = static_cast<DataType>( doubleData[i] );
 		}
 
